@@ -1,0 +1,1039 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>КЛЯКСА — Маркетплейс іграшок та канцтоварів</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: { sans: ["Inter", "sans-serif"] },
+            colors: {
+              brand: { purple: "#7C3AED", pink: "#EC4899", blue: "#2563EB" },
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      .card-appear { opacity: 1; transform: translateY(0) scale(1); transition: opacity .55s ease, transform .55s ease; }
+      .js .card-appear { opacity: 0; transform: translateY(22px) scale(.97); }
+      .card-appear.visible { opacity: 1; transform: translateY(0) scale(1); }
+      .btn-cart { background: linear-gradient(135deg,#EC4899,#7C3AED); }
+      .btn-cart:hover { transform: scale(1.05); }
+      .hero-gradient { background: linear-gradient(135deg,#7C3AED 0%,#EC4899 50%,#2563EB 100%); }
+      .badge-sale { background: #EC4899; }
+      .badge-new  { background: #2563EB; }
+      input[type=search]::-webkit-search-cancel-button { display: none; }
+      /* cards: white → semi-transparent beige */
+      article { background: rgba(255,248,235,0.82) !important; backdrop-filter: blur(6px); }
+      /* category buttons */
+      .cat-btn-inactive { background: rgba(255,250,240,0.72) !important; backdrop-filter: blur(4px); }
+
+      /* admin delete button */
+      .delete-btn { display: none; }
+      body.admin-mode .delete-btn { display: flex; }
+      body.admin-mode #adminAddBtn { display: inline-flex; }
+
+      /* admin mode banner */
+      #adminBanner { display: none; }
+      body.admin-mode #adminBanner { display: flex; }
+
+      /* slide panel */
+      #slidePanel {
+        position: fixed; top: 0; right: 0; height: 100%; width: min(480px, 100vw);
+        background: #fff; box-shadow: -8px 0 40px rgba(0,0,0,0.18);
+        transform: translateX(100%); transition: transform .4s cubic-bezier(.4,0,.2,1);
+        z-index: 60; display: flex; flex-direction: column;
+      }
+      #slidePanel.open { transform: translateX(0); }
+      #slideBg {
+        position: fixed; inset: 0; background: rgba(0,0,0,.4); backdrop-filter: blur(3px);
+        z-index: 59; opacity: 0; pointer-events: none; transition: opacity .4s;
+      }
+      #slideBg.open { opacity: 1; pointer-events: auto; }
+
+      /* cart drawer */
+      #cartBg {
+        position: fixed; inset: 0; background: rgba(0,0,0,.35); backdrop-filter: blur(2px);
+        z-index: 67; opacity: 0; pointer-events: none; transition: opacity .3s;
+      }
+      #cartBg.open { opacity: 1; pointer-events: auto; }
+      #cartDrawer {
+        position: fixed; top: 0; right: 0; height: 100%; width: min(420px, 100vw);
+        background: #fff; z-index: 68; box-shadow: -10px 0 40px rgba(0,0,0,.2);
+        transform: translateX(100%); transition: transform .35s ease;
+        display: flex; flex-direction: column;
+      }
+      #cartDrawer.open { transform: translateX(0); }
+    </style>
+  </head>
+  <body class="font-sans text-slate-800 antialiased" style="background-color:#e8ddc8;">
+
+    <!-- ======= HEADER ======= -->
+    <header class="hero-gradient relative overflow-hidden">
+      <div class="absolute inset-0 bg-white/5"></div>
+      <div class="relative mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+
+        <!-- top bar -->
+        <div class="mb-8 flex flex-wrap items-center justify-between gap-4 text-white">
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 rounded-2xl bg-white/20 px-3 py-2 backdrop-blur-sm">
+              <img id="logoBtn" src="./images/logo.png" alt="Логотип КЛЯКСА" class="h-10 w-10 cursor-pointer rounded-xl bg-white/90 object-cover p-0.5 select-none" title="" />
+              <span class="text-xl font-extrabold tracking-tight">КЛЯКСА</span>
+            </div>
+            <span class="hidden rounded-full bg-white/20 px-3 py-1 text-sm font-medium sm:block">Іграшки та канцтовари</span>
+          </div>
+          <nav class="flex items-center gap-2 text-sm font-semibold">
+            <button class="inline-flex items-center gap-2 rounded-2xl bg-white/15 px-4 py-2 transition hover:scale-105 hover:bg-white/25">
+              <i data-lucide="heart" class="size-4"></i><span class="hidden sm:inline">Обране</span>
+            </button>
+            <button class="inline-flex items-center gap-2 rounded-2xl bg-white/15 px-4 py-2 transition hover:scale-105 hover:bg-white/25">
+              <i data-lucide="user" class="size-4"></i><span class="hidden sm:inline">Профіль</span>
+            </button>
+            <button id="cartToggleBtn" class="inline-flex items-center gap-2 rounded-2xl bg-white/15 px-4 py-2 transition hover:scale-105 hover:bg-white/25">
+              <i data-lucide="shopping-cart" class="size-4"></i><span class="hidden sm:inline">Кошик</span>
+              <span id="cartCount" class="hidden rounded-full bg-fuchsia-500 px-2 py-0.5 text-xs font-bold text-white">0</span>
+            </button>
+          </nav>
+        </div>
+
+        <!-- hero content -->
+        <div class="grid gap-8 lg:grid-cols-[1.4fr_1fr] lg:items-center">
+          <div>
+            <h1 class="mb-4 text-3xl font-black leading-tight text-white sm:text-5xl">
+              Яскраві іграшки,<br class="hidden sm:block"/>настільні ігри<br class="hidden sm:block"/>та канцтовари
+            </h1>
+            <p class="mb-6 max-w-xl text-base text-white/85 sm:text-lg">
+              Великий вибір товарів для дозвілля та навчання за вигідними цінами. Доставка по всій Україні.
+            </p>
+            <!-- search bar -->
+            <div class="flex max-w-2xl items-center gap-2 rounded-2xl bg-white p-2 shadow-xl ring-2 ring-white/50">
+              <i data-lucide="search" class="ml-2 size-5 shrink-0 text-violet-600"></i>
+              <input type="search" placeholder="Пошук товарів..."
+                class="w-full border-none bg-transparent text-slate-700 placeholder:text-slate-400 focus:outline-none" />
+              <button class="shrink-0 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-2.5 font-semibold text-white transition hover:scale-105">
+                Знайти
+              </button>
+            </div>
+          </div>
+          <!-- quick cart -->
+          <div class="rounded-3xl bg-white/15 p-5 text-white backdrop-blur-sm">
+            <h2 class="mb-1 text-lg font-bold">Швидке замовлення</h2>
+            <p class="mb-4 text-sm text-white/80">Додайте товари та оформіть доставку за 2 хвилини.</p>
+            <div class="mb-3 space-y-2 text-sm">
+              <div class="flex items-center gap-2"><i data-lucide="truck" class="size-4 text-white/70"></i> Нова Пошта по всій Україні</div>
+              <div class="flex items-center gap-2"><i data-lucide="shield-check" class="size-4 text-white/70"></i> Гарантія якості товарів</div>
+              <div class="flex items-center gap-2"><i data-lucide="phone" class="size-4 text-white/70"></i> Підтримка 7 днів на тиждень</div>
+            </div>
+            <button id="heroCartBtn" class="btn-cart inline-flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3 text-base font-bold text-white transition">
+              <i data-lucide="shopping-cart" class="size-5"></i>
+              Перейти до кошика
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- ======= CATEGORIES ======= -->
+    <section id="catalogSection" class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div class="flex flex-wrap gap-3">
+        <button data-category-btn="all" class="rounded-2xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow transition hover:scale-105" onclick="filterByCategory('all')">Усі товари</button>
+        <button data-category-btn="board-games" class="cat-btn-inactive rounded-2xl px-5 py-2.5 text-sm font-semibold text-slate-700 shadow transition hover:scale-105 hover:bg-violet-50" onclick="filterByCategory('board-games')">Настільні ігри</button>
+        <button data-category-btn="puzzles" class="cat-btn-inactive rounded-2xl px-5 py-2.5 text-sm font-semibold text-slate-700 shadow transition hover:scale-105 hover:bg-violet-50" onclick="filterByCategory('puzzles')">Пазли</button>
+        <button data-category-btn="coloring" class="cat-btn-inactive rounded-2xl px-5 py-2.5 text-sm font-semibold text-slate-700 shadow transition hover:scale-105 hover:bg-violet-50" onclick="filterByCategory('coloring')">Розмальовки</button>
+        <button data-category-btn="stationery" class="cat-btn-inactive rounded-2xl px-5 py-2.5 text-sm font-semibold text-slate-700 shadow transition hover:scale-105 hover:bg-violet-50" onclick="filterByCategory('stationery')">Канцтовари</button>
+        <button data-category-btn="creativity" class="cat-btn-inactive rounded-2xl px-5 py-2.5 text-sm font-semibold text-slate-700 shadow transition hover:scale-105 hover:bg-violet-50" onclick="filterByCategory('creativity')">Творчість</button>
+        <button data-category-btn="accessories" class="cat-btn-inactive rounded-2xl px-5 py-2.5 text-sm font-semibold text-slate-700 shadow transition hover:scale-105 hover:bg-violet-50" onclick="filterByCategory('accessories')">Аксесуари</button>
+      </div>
+    </section>
+
+    <!-- ======= HITS ======= -->
+    <main class="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
+
+      <div class="mb-6 flex items-end justify-between gap-4">
+        <div>
+          <p class="text-sm font-semibold uppercase tracking-widest text-violet-500">Трендовий розділ</p>
+          <h2 id="sectionTitle" class="text-2xl font-extrabold text-slate-900 sm:text-3xl">Хіти продажів</h2>
+        </div>
+        <!-- Admin button: hidden by default, shown only in admin mode -->
+        <button id="adminAddBtn" onclick="openModal()" class="hidden items-center gap-2 rounded-2xl bg-gradient-to-r from-fuchsia-500 to-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:scale-105">
+          <i data-lucide="plus-circle" class="size-4"></i> Додати товар
+        </button>
+      </div>
+
+      <!-- GRID -->
+      <div id="productGrid" class="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4">
+
+        <!-- 1. Ерудит великий -->
+        <article class="card-appear group rounded-3xl border border-violet-100 bg-white p-3 shadow-lg transition hover:-translate-y-1">
+          <div class="relative mb-3">
+            <img src="./images/Ігри для дозвілля/product-erudyt-velykyi.jpg" alt="Ерудит великий" class="aspect-square w-full rounded-2xl object-cover" />
+            <span class="badge-sale absolute left-2 top-2 rounded-full px-2 py-1 text-xs font-bold text-white">ХІТ</span>
+          </div>
+          <h3 class="mb-1 text-sm font-bold text-slate-900 sm:text-base">Ерудит великий</h3>
+          <p class="mb-2 text-xs text-slate-500">Розвивальна гра-вікторина</p>
+          <div class="mb-3 flex items-center justify-between">
+            <span class="text-lg font-extrabold text-slate-900">170 грн</span>
+            <span class="text-xs font-semibold text-amber-500">★ 4.9</span>
+          </div>
+          <button class="btn-cart inline-flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-xs font-bold text-white transition sm:text-sm">
+            <i data-lucide="shopping-cart" class="size-4"></i> В кошик
+          </button>
+        </article>
+
+        <!-- 2. Ерудит Premium -->
+        <article class="card-appear group rounded-3xl border border-violet-100 bg-white p-3 shadow-lg transition hover:-translate-y-1">
+          <div class="relative mb-3">
+            <img src="./images/product-erudyt-premium.jpg" alt="Ерудит Premium" class="aspect-square w-full rounded-2xl object-cover" />
+            <span class="badge-new absolute left-2 top-2 rounded-full px-2 py-1 text-xs font-bold text-white">NEW</span>
+          </div>
+          <h3 class="mb-1 text-sm font-bold text-slate-900 sm:text-base">Ерудит Premium Series</h3>
+          <p class="mb-2 text-xs text-slate-500">Настільна гра, дерев'яні фішки</p>
+          <div class="mb-3 flex items-center justify-between">
+            <span class="text-lg font-extrabold text-slate-900">170 грн</span>
+            <span class="text-xs font-semibold text-amber-500">★ 5.0</span>
+          </div>
+          <button class="btn-cart inline-flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-xs font-bold text-white transition sm:text-sm">
+            <i data-lucide="shopping-cart" class="size-4"></i> В кошик
+          </button>
+        </article>
+
+        <!-- 3. Бізнес -->
+        <article class="card-appear group rounded-3xl border border-violet-100 bg-white p-3 shadow-lg transition hover:-translate-y-1">
+          <div class="relative mb-3">
+            <img src="./images/Ігри для дозвілля/product-biznes.jpg" alt="Бізнес International" class="aspect-square w-full rounded-2xl object-cover" />
+            <span class="badge-sale absolute left-2 top-2 rounded-full px-2 py-1 text-xs font-bold text-white">ХІТ</span>
+          </div>
+          <h3 class="mb-1 text-sm font-bold text-slate-900 sm:text-base">Бізнес International</h3>
+          <p class="mb-2 text-xs text-slate-500">Економічна настільна гра</p>
+          <div class="mb-3 flex items-center justify-between">
+            <span class="text-lg font-extrabold text-slate-900">40 грн</span>
+            <span class="text-xs font-semibold text-amber-500">★ 4.8</span>
+          </div>
+          <button class="btn-cart inline-flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-xs font-bold text-white transition sm:text-sm">
+            <i data-lucide="shopping-cart" class="size-4"></i> В кошик
+          </button>
+        </article>
+
+        <!-- 4. Тварини нашої планети -->
+        <article class="card-appear group rounded-3xl border border-violet-100 bg-white p-3 shadow-lg transition hover:-translate-y-1">
+          <div class="relative mb-3">
+            <img src="./images/product-tvaryny-planety.jpg" alt="Тварини нашої планети" class="aspect-square w-full rounded-2xl object-cover" />
+            <span class="badge-new absolute left-2 top-2 rounded-full px-2 py-1 text-xs font-bold text-white">NEW</span>
+          </div>
+          <h3 class="mb-1 text-sm font-bold text-slate-900 sm:text-base">Тварини нашої планети</h3>
+          <p class="mb-2 text-xs text-slate-500">Карткова гра-вікторина</p>
+          <div class="mb-3 flex items-center justify-between">
+            <span class="text-lg font-extrabold text-slate-900">188 грн</span>
+            <span class="text-xs font-semibold text-amber-500">★ 4.7</span>
+          </div>
+          <button class="btn-cart inline-flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-xs font-bold text-white transition sm:text-sm">
+            <i data-lucide="shopping-cart" class="size-4"></i> В кошик
+          </button>
+        </article>
+
+        <!-- 5. Пазл круглий 180 -->
+        <article class="card-appear group rounded-3xl border border-violet-100 bg-white p-3 shadow-lg transition hover:-translate-y-1">
+          <div class="relative mb-3">
+            <img src="./images/Ігри для дозвілля/product-puzzle-kruhlyy.jpg" alt="Пазл круглий 180" class="aspect-square w-full rounded-2xl object-cover" />
+            <span class="badge-sale absolute left-2 top-2 rounded-full px-2 py-1 text-xs font-bold text-white">-15%</span>
+          </div>
+          <h3 class="mb-1 text-sm font-bold text-slate-900 sm:text-base">Пазл круглий 180 деталей</h3>
+          <p class="mb-2 text-xs text-slate-500">Danko Toys, діаметр 300 мм</p>
+          <div class="mb-3 flex items-center justify-between">
+            <span class="text-lg font-extrabold text-slate-900">50 грн</span>
+            <span class="text-xs font-semibold text-amber-500">★ 4.8</span>
+          </div>
+          <button class="btn-cart inline-flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-xs font-bold text-white transition sm:text-sm">
+            <i data-lucide="shopping-cart" class="size-4"></i> В кошик
+          </button>
+        </article>
+
+        <!-- 6. Пазл 380 корабель -->
+        <article class="card-appear group rounded-3xl border border-violet-100 bg-white p-3 shadow-lg transition hover:-translate-y-1">
+          <div class="relative mb-3">
+            <img src="./images/product-puzzle-380-korabel.jpg" alt="Пазл 380 корабель" class="aspect-square w-full rounded-2xl object-cover" />
+            <span class="badge-new absolute left-2 top-2 rounded-full px-2 py-1 text-xs font-bold text-white">NEW</span>
+          </div>
+          <h3 class="mb-1 text-sm font-bold text-slate-900 sm:text-base">Пазл 380 дет. «Корабель»</h3>
+          <p class="mb-2 text-xs text-slate-500">475×340 мм, класична серія</p>
+          <div class="mb-3 flex items-center justify-between">
+            <span class="text-lg font-extrabold text-slate-900">124 грн</span>
+            <span class="text-xs font-semibold text-amber-500">★ 4.9</span>
+          </div>
+          <button class="btn-cart inline-flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-xs font-bold text-white transition sm:text-sm">
+            <i data-lucide="shopping-cart" class="size-4"></i> В кошик
+          </button>
+        </article>
+
+        <!-- 7. Пазл 380 Greek Islands -->
+        <article class="card-appear group rounded-3xl border border-violet-100 bg-white p-3 shadow-lg transition hover:-translate-y-1">
+          <div class="relative mb-3">
+            <img src="./images/product-puzzle-380-greek.jpg" alt="Пазл 380 Грецькі острови" class="aspect-square w-full rounded-2xl object-cover" />
+            <span class="badge-sale absolute left-2 top-2 rounded-full px-2 py-1 text-xs font-bold text-white">-10%</span>
+          </div>
+          <h3 class="mb-1 text-sm font-bold text-slate-900 sm:text-base">Пазл 380 дет. «Греція»</h3>
+          <p class="mb-2 text-xs text-slate-500">475×340 мм, Danko Toys</p>
+          <div class="mb-3 flex items-center justify-between">
+            <span class="text-lg font-extrabold text-slate-900">124 грн</span>
+            <span class="text-xs font-semibold text-amber-500">★ 4.8</span>
+          </div>
+          <button class="btn-cart inline-flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-xs font-bold text-white transition sm:text-sm">
+            <i data-lucide="shopping-cart" class="size-4"></i> В кошик
+          </button>
+        </article>
+
+        <!-- 8. Пазл 80 казка -->
+        <article class="card-appear group rounded-3xl border border-violet-100 bg-white p-3 shadow-lg transition hover:-translate-y-1">
+          <div class="relative mb-3">
+            <img src="./images/product-puzzle-80-kazka.jpg" alt="Пазл 80 казка" class="aspect-square w-full rounded-2xl object-cover" />
+            <span class="badge-new absolute left-2 top-2 rounded-full px-2 py-1 text-xs font-bold text-white">NEW</span>
+          </div>
+          <h3 class="mb-1 text-sm font-bold text-slate-900 sm:text-base">Пазл 80 дет. «Казка»</h3>
+          <p class="mb-2 text-xs text-slate-500">230×165 мм, від 3 років</p>
+          <div class="mb-3 flex items-center justify-between">
+            <span class="text-lg font-extrabold text-slate-900">83 грн</span>
+            <span class="text-xs font-semibold text-amber-500">★ 4.7</span>
+          </div>
+          <button class="btn-cart inline-flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-xs font-bold text-white transition sm:text-sm">
+            <i data-lucide="shopping-cart" class="size-4"></i> В кошик
+          </button>
+        </article>
+
+        <!-- 9. Пазл 80 пірати -->
+        <article class="card-appear group rounded-3xl border border-violet-100 bg-white p-3 shadow-lg transition hover:-translate-y-1">
+          <div class="relative mb-3">
+            <img src="./images/product-puzzle-80-piraty.jpg" alt="Пазл 80 пірати" class="aspect-square w-full rounded-2xl object-cover" />
+            <span class="badge-sale absolute left-2 top-2 rounded-full px-2 py-1 text-xs font-bold text-white">-15%</span>
+          </div>
+          <h3 class="mb-1 text-sm font-bold text-slate-900 sm:text-base">Пазл 80 дет. «Пірати»</h3>
+          <p class="mb-2 text-xs text-slate-500">230×165 мм, від 3 років</p>
+          <div class="mb-3 flex items-center justify-between">
+            <span class="text-lg font-extrabold text-slate-900">83 грн</span>
+            <span class="text-xs font-semibold text-amber-500">★ 4.8</span>
+          </div>
+          <button class="btn-cart inline-flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-xs font-bold text-white transition sm:text-sm">
+            <i data-lucide="shopping-cart" class="size-4"></i> В кошик
+          </button>
+        </article>
+
+        <!-- 10. Пазл 80 квіти -->
+        <article class="card-appear group rounded-3xl border border-violet-100 bg-white p-3 shadow-lg transition hover:-translate-y-1">
+          <div class="relative mb-3">
+            <img src="./images/product-puzzle-80-kvity.jpg" alt="Пазл 80 квіти" class="aspect-square w-full rounded-2xl object-cover" />
+            <span class="badge-new absolute left-2 top-2 rounded-full px-2 py-1 text-xs font-bold text-white">NEW</span>
+          </div>
+          <h3 class="mb-1 text-sm font-bold text-slate-900 sm:text-base">Пазл 80 дет. «Квіти»</h3>
+          <p class="mb-2 text-xs text-slate-500">230×165 мм, від 3 років</p>
+          <div class="mb-3 flex items-center justify-between">
+            <span class="text-lg font-extrabold text-slate-900">83 грн</span>
+            <span class="text-xs font-semibold text-amber-500">★ 4.9</span>
+          </div>
+          <button class="btn-cart inline-flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-xs font-bold text-white transition sm:text-sm">
+            <i data-lucide="shopping-cart" class="size-4"></i> В кошик
+          </button>
+        </article>
+
+        <!-- 11. Набір бісеру -->
+        <article class="card-appear group rounded-3xl border border-violet-100 bg-white p-3 shadow-lg transition hover:-translate-y-1">
+          <div class="relative mb-3">
+            <img src="./images/product-bicer.jpg" alt="Набір бісеру" class="aspect-square w-full rounded-2xl object-cover" />
+            <span class="badge-sale absolute left-2 top-2 rounded-full px-2 py-1 text-xs font-bold text-white">ХІТ</span>
+          </div>
+          <h3 class="mb-1 text-sm font-bold text-slate-900 sm:text-base">Набір бісеру «Бисер»</h3>
+          <p class="mb-2 text-xs text-slate-500">Danko Toys, для творчості</p>
+          <div class="mb-3 flex items-center justify-between">
+            <span class="text-lg font-extrabold text-slate-900">110 грн</span>
+            <span class="text-xs font-semibold text-amber-500">★ 4.8</span>
+          </div>
+          <button class="btn-cart inline-flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-xs font-bold text-white transition sm:text-sm">
+            <i data-lucide="shopping-cart" class="size-4"></i> В кошик
+          </button>
+        </article>
+
+        <!-- 12. Килимова вишивка -->
+        <article class="card-appear group rounded-3xl border border-violet-100 bg-white p-3 shadow-lg transition hover:-translate-y-1">
+          <div class="relative mb-3">
+            <img src="./images/product-kilymova-vyshyvka.jpg" alt="Килимова вишивка" class="aspect-square w-full rounded-2xl object-cover" />
+            <span class="badge-new absolute left-2 top-2 rounded-full px-2 py-1 text-xs font-bold text-white">NEW</span>
+          </div>
+          <h3 class="mb-1 text-sm font-bold text-slate-900 sm:text-base">Килимова вишивка Punch Needle</h3>
+          <p class="mb-2 text-xs text-slate-500">Набір для творчості, від 6 років</p>
+          <div class="mb-3 flex items-center justify-between">
+            <span class="text-lg font-extrabold text-slate-900">80 грн</span>
+            <span class="text-xs font-semibold text-amber-500">★ 4.9</span>
+          </div>
+          <button class="btn-cart inline-flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-xs font-bold text-white transition sm:text-sm">
+            <i data-lucide="shopping-cart" class="size-4"></i> В кошик
+          </button>
+        </article>
+
+        <!-- 13. Розмальовка Долина Фей -->
+        <article class="card-appear group rounded-3xl border border-violet-100 bg-white p-3 shadow-lg transition hover:-translate-y-1">
+          <div class="relative mb-3">
+            <img src="./images/Ігри для дозвілля/product-rozmaliuvanka-fei.jpg" alt="Розмальовка Долина Фей" class="aspect-square w-full rounded-2xl object-cover" />
+            <span class="badge-sale absolute left-2 top-2 rounded-full px-2 py-1 text-xs font-bold text-white">-20%</span>
+          </div>
+          <h3 class="mb-1 text-sm font-bold text-slate-900 sm:text-base">Розмальовка «Долина Фей»</h3>
+          <p class="mb-2 text-xs text-slate-500">Для дівчаток, формат А4</p>
+          <div class="mb-3 flex items-center justify-between">
+            <span class="text-lg font-extrabold text-slate-900">35 грн</span>
+            <span class="text-xs font-semibold text-amber-500">★ 4.7</span>
+          </div>
+          <button class="btn-cart inline-flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-xs font-bold text-white transition sm:text-sm">
+            <i data-lucide="shopping-cart" class="size-4"></i> В кошик
+          </button>
+        </article>
+
+        <!-- 14. Розмальовка Гламурні красотки -->
+        <article class="card-appear group rounded-3xl border border-violet-100 bg-white p-3 shadow-lg transition hover:-translate-y-1">
+          <div class="relative mb-3">
+            <img src="./images/Ігри для дозвілля/product-rozmaliuvanka-krasotky.jpg" alt="Гламурні красотки" class="aspect-square w-full rounded-2xl object-cover" />
+            <span class="badge-new absolute left-2 top-2 rounded-full px-2 py-1 text-xs font-bold text-white">NEW</span>
+          </div>
+          <h3 class="mb-1 text-sm font-bold text-slate-900 sm:text-base">Розмальовка «Гламурні красотки»</h3>
+          <p class="mb-2 text-xs text-slate-500">Для дівчаток, формат А4</p>
+          <div class="mb-3 flex items-center justify-between">
+            <span class="text-lg font-extrabold text-slate-900">35 грн</span>
+            <span class="text-xs font-semibold text-amber-500">★ 4.8</span>
+          </div>
+          <button class="btn-cart inline-flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-xs font-bold text-white transition sm:text-sm">
+            <i data-lucide="shopping-cart" class="size-4"></i> В кошик
+          </button>
+        </article>
+
+        <!-- 15. Зошити шкільні -->
+        <article class="card-appear group rounded-3xl border border-violet-100 bg-white p-3 shadow-lg transition hover:-translate-y-1">
+          <div class="relative mb-3">
+            <img src="./images/product-zoshyty.jpg" alt="Зошити шкільні" class="aspect-square w-full rounded-2xl object-cover" />
+            <span class="badge-sale absolute left-2 top-2 rounded-full px-2 py-1 text-xs font-bold text-white">ХІТ</span>
+          </div>
+          <h3 class="mb-1 text-sm font-bold text-slate-900 sm:text-base">Зошити шкільні (набір)</h3>
+          <p class="mb-2 text-xs text-slate-500">18 аркушів, різні обкладинки</p>
+          <div class="mb-3 flex items-center justify-between">
+            <span class="text-lg font-extrabold text-slate-900">15 грн</span>
+            <span class="text-xs font-semibold text-amber-500">★ 4.9</span>
+          </div>
+          <button class="btn-cart inline-flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-xs font-bold text-white transition sm:text-sm">
+            <i data-lucide="shopping-cart" class="size-4"></i> В кошик
+          </button>
+        </article>
+
+        <!-- 16. Підставка для ручок зелена -->
+        <article class="card-appear group rounded-3xl border border-violet-100 bg-white p-3 shadow-lg transition hover:-translate-y-1">
+          <div class="relative mb-3">
+            <img src="./images/product-pidstavka-zelena.jpg" alt="Підставка для ручок" class="aspect-square w-full rounded-2xl object-cover" />
+            <span class="badge-new absolute left-2 top-2 rounded-full px-2 py-1 text-xs font-bold text-white">NEW</span>
+          </div>
+          <h3 class="mb-1 text-sm font-bold text-slate-900 sm:text-base">Підставка для ручок (зелена)</h3>
+          <p class="mb-2 text-xs text-slate-500">Пластик, 2 відсіки</p>
+          <div class="mb-3 flex items-center justify-between">
+            <span class="text-lg font-extrabold text-slate-900">68 грн</span>
+            <span class="text-xs font-semibold text-amber-500">★ 4.6</span>
+          </div>
+          <button class="btn-cart inline-flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-xs font-bold text-white transition sm:text-sm">
+            <i data-lucide="shopping-cart" class="size-4"></i> В кошик
+          </button>
+        </article>
+
+        <!-- 17. Підставка синя -->
+        <article class="card-appear group rounded-3xl border border-violet-100 bg-white p-3 shadow-lg transition hover:-translate-y-1">
+          <div class="relative mb-3">
+            <img src="./images/product-pidstavka-syna.jpg" alt="Підставка для ручок синя" class="aspect-square w-full rounded-2xl object-cover" />
+            <span class="badge-sale absolute left-2 top-2 rounded-full px-2 py-1 text-xs font-bold text-white">-10%</span>
+          </div>
+          <h3 class="mb-1 text-sm font-bold text-slate-900 sm:text-base">Підставка для ручок (синя)</h3>
+          <p class="mb-2 text-xs text-slate-500">Пластик, 2 відсіки</p>
+          <div class="mb-3 flex items-center justify-between">
+            <span class="text-lg font-extrabold text-slate-900">68 грн</span>
+            <span class="text-xs font-semibold text-amber-500">★ 4.6</span>
+          </div>
+          <button class="btn-cart inline-flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-xs font-bold text-white transition sm:text-sm">
+            <i data-lucide="shopping-cart" class="size-4"></i> В кошик
+          </button>
+        </article>
+
+        <!-- 18. Органайзер -->
+        <article class="card-appear group rounded-3xl border border-violet-100 bg-white p-3 shadow-lg transition hover:-translate-y-1">
+          <div class="relative mb-3">
+            <img src="./images/product-orhanayzer.jpg" alt="Органайзер для ручок" class="aspect-square w-full rounded-2xl object-cover" />
+            <span class="badge-new absolute left-2 top-2 rounded-full px-2 py-1 text-xs font-bold text-white">NEW</span>
+          </div>
+          <h3 class="mb-1 text-sm font-bold text-slate-900 sm:text-base">Органайзер для канцтоварів</h3>
+          <p class="mb-2 text-xs text-slate-500">4 відсіки, обертається</p>
+          <div class="mb-3 flex items-center justify-between">
+            <span class="text-lg font-extrabold text-slate-900">120 грн</span>
+            <span class="text-xs font-semibold text-amber-500">★ 4.8</span>
+          </div>
+          <button class="btn-cart inline-flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-xs font-bold text-white transition sm:text-sm">
+            <i data-lucide="shopping-cart" class="size-4"></i> В кошик
+          </button>
+        </article>
+
+        <!-- 19. PopSocket -->
+        <article class="card-appear group rounded-3xl border border-violet-100 bg-white p-3 shadow-lg transition hover:-translate-y-1">
+          <div class="relative mb-3">
+            <img src="./images/product-popsocket.jpg" alt="PopSocket" class="aspect-square w-full rounded-2xl object-cover" />
+            <span class="badge-sale absolute left-2 top-2 rounded-full px-2 py-1 text-xs font-bold text-white">ХІТ</span>
+          </div>
+          <h3 class="mb-1 text-sm font-bold text-slate-900 sm:text-base">PopSocket тримач для телефону</h3>
+          <p class="mb-2 text-xs text-slate-500">Universальний, різні кольори</p>
+          <div class="mb-3 flex items-center justify-between">
+            <span class="text-lg font-extrabold text-slate-900">95 грн</span>
+            <span class="text-xs font-semibold text-amber-500">★ 4.7</span>
+          </div>
+          <button class="btn-cart inline-flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-xs font-bold text-white transition sm:text-sm">
+            <i data-lucide="shopping-cart" class="size-4"></i> В кошик
+          </button>
+        </article>
+
+        <!-- 20. Клей канцелярський -->
+        <article class="card-appear group rounded-3xl border border-violet-100 bg-white p-3 shadow-lg transition hover:-translate-y-1">
+          <div class="relative mb-3">
+            <img src="./images/product-klej.jpg" alt="Клей канцелярський" class="aspect-square w-full rounded-2xl object-cover" />
+            <span class="badge-new absolute left-2 top-2 rounded-full px-2 py-1 text-xs font-bold text-white">NEW</span>
+          </div>
+          <h3 class="mb-1 text-sm font-bold text-slate-900 sm:text-base">Клей конторський 200 мл</h3>
+          <p class="mb-2 text-xs text-slate-500">З дозатором, ПВА</p>
+          <div class="mb-3 flex items-center justify-between">
+            <span class="text-lg font-extrabold text-slate-900">33 грн</span>
+            <span class="text-xs font-semibold text-amber-500">★ 4.8</span>
+          </div>
+          <button class="btn-cart inline-flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-xs font-bold text-white transition sm:text-sm">
+            <i data-lucide="shopping-cart" class="size-4"></i> В кошик
+          </button>
+        </article>
+
+      </div>
+      <div id="emptyCategoryState" class="mt-8 hidden rounded-3xl border border-dashed border-violet-200 bg-white/50 p-8 text-center">
+        <p id="emptyCategoryText" class="text-sm font-semibold text-slate-600">У цьому розділі поки що немає товарів.</p>
+      </div>
+    </main>
+
+    <!-- ======= PASSWORD PROMPT ======= -->
+    <div id="pwOverlay" class="fixed inset-0 z-[70] hidden items-center justify-center p-4">
+      <div onclick="closePasswordPrompt()" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+      <div class="relative z-10 w-full max-w-sm rounded-3xl bg-white p-7 shadow-2xl">
+        <div class="mb-5 flex flex-col items-center gap-2 text-center">
+          <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-fuchsia-500 to-violet-600 shadow-lg">
+            <i data-lucide="lock" class="size-7 text-white"></i>
+          </div>
+          <h2 class="text-xl font-extrabold text-slate-900">Вхід для адміністратора</h2>
+          <p class="text-sm text-slate-500">Введіть пароль для доступу</p>
+        </div>
+        <input id="pwInput" type="password" placeholder="••••••••••"
+          onkeydown="if(event.key==='Enter') checkPassword();"
+          class="mb-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-center text-lg tracking-widest focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-200" />
+        <p id="pwError" class="hidden mb-3 text-center text-sm font-semibold text-red-500">Невірний пароль. Спробуйте ще раз.</p>
+        <button onclick="checkPassword()"
+          class="btn-cart inline-flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-base font-bold text-white transition">
+          <i data-lucide="unlock" class="size-5"></i> Увійти
+        </button>
+      </div>
+    </div>
+
+    <!-- ======= ADMIN BANNER ======= -->
+    <div id="adminBanner" class="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 items-center gap-3 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-xl">
+      <i data-lucide="shield" class="size-4 text-fuchsia-400"></i>
+      Режим адміністратора увімкнено
+      <button onclick="exitAdmin()" class="ml-3 rounded-xl bg-white/10 px-3 py-1 text-xs hover:bg-white/20">Вийти</button>
+    </div>
+
+    <!-- ======= SLIDE PANEL ======= -->
+    <div id="slideBg" onclick="closeSlide()"></div>
+    <div id="slidePanel">
+      <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+        <h3 id="slideTitle" class="text-lg font-extrabold text-slate-900"></h3>
+        <button onclick="closeSlide()" class="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100">
+          <i data-lucide="x" class="size-5"></i>
+        </button>
+      </div>
+      <div class="flex-1 overflow-y-auto p-5">
+        <img id="slideImg" src="" alt="" class="w-full rounded-2xl object-contain shadow-md" style="max-height:60vh;" />
+        <p id="slideDesc" class="mt-4 text-sm text-slate-500"></p>
+        <p id="slidePrice" class="mt-2 text-2xl font-extrabold text-slate-900"></p>
+        <button id="slideCartBtn" class="btn-cart mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-base font-bold text-white transition">
+          <i data-lucide="shopping-cart" class="size-5"></i> В кошик
+        </button>
+      </div>
+    </div>
+
+    <!-- ======= CART DRAWER ======= -->
+    <div id="cartBg" onclick="closeCartDrawer()"></div>
+    <aside id="cartDrawer">
+      <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+        <h3 class="text-lg font-extrabold text-slate-900">Ваш кошик</h3>
+        <button onclick="closeCartDrawer()" class="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100">
+          <i data-lucide="x" class="size-5"></i>
+        </button>
+      </div>
+      <div id="cartItems" class="flex-1 space-y-3 overflow-y-auto p-4">
+        <p class="text-sm text-slate-500">Кошик порожній. Додайте товари.</p>
+      </div>
+      <div class="border-t border-slate-100 p-4">
+        <div class="mb-3 flex items-center justify-between">
+          <span class="text-sm font-semibold text-slate-600">Разом:</span>
+          <span id="cartTotal" class="text-xl font-extrabold text-slate-900">0 грн</span>
+        </div>
+        <button class="btn-cart inline-flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold text-white transition">
+          <i data-lucide="credit-card" class="size-4"></i> Оформити замовлення
+        </button>
+      </div>
+    </aside>
+
+    <!-- ======= ADD PRODUCT MODAL ======= -->
+    <div id="modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+      <!-- backdrop -->
+      <div onclick="closeModal()" class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+      <!-- panel -->
+      <div class="relative z-10 w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
+        <div class="mb-5 flex items-center justify-between">
+          <h2 class="text-xl font-extrabold text-slate-900">Новий товар</h2>
+          <button onclick="closeModal()" class="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+            <i data-lucide="x" class="size-5"></i>
+          </button>
+        </div>
+
+        <form id="productForm" onsubmit="addProduct(event)" class="space-y-4">
+
+          <!-- name -->
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-slate-700">Назва товару *</label>
+            <input id="f-name" type="text" required placeholder="Наприклад: Пазл 80 дет. «Ліс»"
+              class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-200" />
+          </div>
+
+          <!-- description -->
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-slate-700">Опис</label>
+            <input id="f-desc" type="text" placeholder="Короткий опис товару"
+              class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-200" />
+          </div>
+
+          <!-- price + rating -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="mb-1 block text-sm font-semibold text-slate-700">Ціна (грн) *</label>
+              <input id="f-price" type="number" min="1" required placeholder="0"
+                class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-200" />
+            </div>
+            <div>
+              <label class="mb-1 block text-sm font-semibold text-slate-700">Рейтинг (1–5)</label>
+              <input id="f-rating" type="number" min="1" max="5" step="0.1" placeholder="4.8"
+                class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-200" />
+            </div>
+          </div>
+
+          <!-- badge -->
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-slate-700">Бейдж</label>
+            <select id="f-badge"
+              class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-200">
+              <option value="">— без бейджа —</option>
+              <option value="new">NEW</option>
+              <option value="hit">ХІТ</option>
+              <option value="-10%">-10%</option>
+              <option value="-15%">-15%</option>
+              <option value="-20%">-20%</option>
+              <option value="-25%">-25%</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-slate-700">Категорія *</label>
+            <select id="f-category" required
+              class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-200">
+              <option value="board-games">Настільні ігри</option>
+              <option value="puzzles">Пазли</option>
+              <option value="coloring">Розмальовки</option>
+              <option value="stationery">Канцтовари</option>
+              <option value="creativity">Творчість</option>
+              <option value="accessories">Аксесуари</option>
+            </select>
+          </div>
+
+          <!-- image -->
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-slate-700">Фото товару</label>
+            <label class="flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-violet-300 bg-violet-50 px-4 py-5 text-sm text-violet-600 transition hover:bg-violet-100">
+              <i data-lucide="image-plus" class="size-7"></i>
+              <span id="img-label">Оберіть фото або перетягніть сюди</span>
+              <input id="f-image" type="file" accept="image/*" class="hidden" onchange="previewImage(this)" />
+            </label>
+            <img id="f-preview" src="" alt="" class="mt-2 hidden aspect-square w-full rounded-2xl object-cover" />
+          </div>
+
+          <!-- submit -->
+          <button type="submit"
+            class="btn-cart inline-flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-base font-bold text-white transition">
+            <i data-lucide="plus" class="size-5"></i> Додати на сайт
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ======= FOOTER ======= -->
+    <footer class="hero-gradient text-white">
+      <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <img src="./images/logo.png" alt="КЛЯКСА" class="h-10 w-10 rounded-xl bg-white/90 object-cover p-0.5" />
+            <div>
+              <p class="font-extrabold">КЛЯКСА</p>
+              <p class="text-xs text-white/70">Маркетплейс іграшок та канцтоварів</p>
+            </div>
+          </div>
+          <p class="text-sm text-white/70">© 2026 КЛЯКСА. Усі права захищено.</p>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      document.documentElement.classList.add("js");
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+      if (window.lucide) lucide.createIcons();
+
+      // ── scroll animation ──────────────────────────────────────────
+      function observeCards() {
+        const all = document.querySelectorAll(".card-appear:not(.visible)");
+        if ("IntersectionObserver" in window) {
+          const obs = new IntersectionObserver((entries) => {
+            entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("visible"); obs.unobserve(e.target); } });
+          }, { threshold: 0.1 });
+          all.forEach((c) => obs.observe(c));
+        } else { all.forEach((c) => c.classList.add("visible")); }
+      }
+      observeCards();
+
+      // ── SECRET ADMIN: click logo 5 times → password prompt ───────
+      let logoClicks = 0, logoTimer = null;
+      document.getElementById("logoBtn").addEventListener("click", () => {
+        logoClicks++;
+        clearTimeout(logoTimer);
+        logoTimer = setTimeout(() => { logoClicks = 0; }, 3000);
+        if (logoClicks >= 5) {
+          logoClicks = 0;
+          openPasswordPrompt();
+        }
+      });
+
+      function openPasswordPrompt() {
+        const overlay = document.getElementById("pwOverlay");
+        overlay.classList.remove("hidden");
+        overlay.classList.add("flex");
+        document.getElementById("pwInput").value = "";
+        document.getElementById("pwError").classList.add("hidden");
+        setTimeout(() => document.getElementById("pwInput").focus(), 50);
+      }
+      function closePasswordPrompt() {
+        const overlay = document.getElementById("pwOverlay");
+        overlay.classList.add("hidden");
+        overlay.classList.remove("flex");
+      }
+      function checkPassword() {
+        const val = document.getElementById("pwInput").value;
+        if (val === "lana191919") {
+          closePasswordPrompt();
+          enterAdmin();
+        } else {
+          const err = document.getElementById("pwError");
+          err.classList.remove("hidden");
+          document.getElementById("pwInput").value = "";
+          document.getElementById("pwInput").focus();
+        }
+      }
+
+      function enterAdmin() {
+        document.body.classList.add("admin-mode");
+        if (window.lucide) lucide.createIcons();
+      }
+      function exitAdmin() {
+        document.body.classList.remove("admin-mode");
+      }
+
+      // ── SLIDE PANEL ───────────────────────────────────────────────
+      function openSlide(imgSrc, title, desc, price) {
+        document.getElementById("slideImg").src   = imgSrc;
+        document.getElementById("slideTitle").textContent = title;
+        document.getElementById("slideDesc").textContent  = desc;
+        document.getElementById("slidePrice").textContent = price ? price + " грн" : "";
+        const slideBtn = document.getElementById("slideCartBtn");
+        slideBtn.dataset.name = title;
+        slideBtn.dataset.price = String(price || 0);
+        slideBtn.dataset.img = imgSrc;
+        document.getElementById("slidePanel").classList.add("open");
+        document.getElementById("slideBg").classList.add("open");
+        document.body.style.overflow = "hidden";
+        if (window.lucide) lucide.createIcons();
+      }
+      function closeSlide() {
+        document.getElementById("slidePanel").classList.remove("open");
+        document.getElementById("slideBg").classList.remove("open");
+        document.body.style.overflow = "";
+      }
+
+      // ── categories / sections ─────────────────────────────────────
+      const categoryLabels = {
+        all: "Хіти продажів",
+        "board-games": "Настільні ігри",
+        puzzles: "Пазли",
+        coloring: "Розмальовки",
+        stationery: "Канцтовари",
+        creativity: "Творчість",
+        accessories: "Аксесуари",
+      };
+      let currentCategory = "all";
+
+      function detectCategoryByTitle(title) {
+        const t = (title || "").toLowerCase();
+        if (t.includes("пазл")) return "puzzles";
+        if (t.includes("розмальов")) return "coloring";
+        if (t.includes("ерудит") || t.includes("бізнес") || t.includes("вікторин") || t.includes("планети")) return "board-games";
+        if (t.includes("клей") || t.includes("зошит") || t.includes("підставк") || t.includes("органайзер") || t.includes("книг")) return "stationery";
+        if (t.includes("бісер") || t.includes("вишивк") || t.includes("творч")) return "creativity";
+        if (t.includes("popsocket") || t.includes("телефон") || t.includes("аксесуар")) return "accessories";
+        return "board-games";
+      }
+
+      function applyCategoryVisibility(category) {
+        const cards = document.querySelectorAll("#productGrid article");
+        let visibleCount = 0;
+        cards.forEach((card) => {
+          const cardCategory = card.dataset.category || detectCategoryByTitle(card.querySelector("h3")?.textContent || "");
+          card.dataset.category = cardCategory;
+          const visible = category === "all" || cardCategory === category;
+          card.classList.toggle("hidden", !visible);
+          if (visible) visibleCount++;
+        });
+
+        const empty = document.getElementById("emptyCategoryState");
+        const emptyText = document.getElementById("emptyCategoryText");
+        if (visibleCount === 0 && category !== "all") {
+          empty.classList.remove("hidden");
+          emptyText.textContent = `У розділі «${categoryLabels[category]}» поки що немає товарів. Адміністратор може додати їх у будь-який момент.`;
+        } else {
+          empty.classList.add("hidden");
+        }
+      }
+
+      function updateCategoryButtons(category) {
+        document.querySelectorAll("[data-category-btn]").forEach((btn) => {
+          const isActive = btn.dataset.categoryBtn === category;
+          btn.classList.toggle("bg-violet-600", isActive);
+          btn.classList.toggle("text-white", isActive);
+          btn.classList.toggle("cat-btn-inactive", !isActive);
+          btn.classList.toggle("text-slate-700", !isActive);
+        });
+      }
+
+      function filterByCategory(category) {
+        currentCategory = category;
+        updateCategoryButtons(category);
+        applyCategoryVisibility(category);
+        document.getElementById("sectionTitle").textContent = categoryLabels[category] || "Хіти продажів";
+        document.getElementById("catalogSection").scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      // ── CART ───────────────────────────────────────────────────────
+      const cart = [];
+      function openCartDrawer() {
+        document.getElementById("cartDrawer").classList.add("open");
+        document.getElementById("cartBg").classList.add("open");
+        document.body.style.overflow = "hidden";
+      }
+      function closeCartDrawer() {
+        document.getElementById("cartDrawer").classList.remove("open");
+        document.getElementById("cartBg").classList.remove("open");
+        document.body.style.overflow = "";
+      }
+      function updateCartBadge() {
+        const badge = document.getElementById("cartCount");
+        badge.textContent = String(cart.length);
+        badge.classList.toggle("hidden", cart.length === 0);
+      }
+      function renderCart() {
+        const box = document.getElementById("cartItems");
+        const totalEl = document.getElementById("cartTotal");
+        if (cart.length === 0) {
+          box.innerHTML = `<p class="text-sm text-slate-500">Кошик порожній. Додайте товари.</p>`;
+          totalEl.textContent = "0 грн";
+          updateCartBadge();
+          return;
+        }
+        let total = 0;
+        box.innerHTML = cart.map((item, idx) => {
+          total += item.price;
+          return `
+            <div class="flex items-center gap-3 rounded-2xl border border-slate-100 p-2.5">
+              <img src="${item.img}" alt="${item.name}" class="h-14 w-14 rounded-xl object-cover" />
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-bold text-slate-900">${item.name}</p>
+                <p class="text-xs text-slate-500">${item.price} грн</p>
+              </div>
+              <button onclick="removeFromCart(${idx})" class="rounded-lg p-1.5 text-red-500 hover:bg-red-50">
+                <i data-lucide="trash-2" class="size-4"></i>
+              </button>
+            </div>`;
+        }).join("");
+        totalEl.textContent = `${total} грн`;
+        updateCartBadge();
+        if (window.lucide) lucide.createIcons();
+      }
+      function removeFromCart(index) {
+        cart.splice(index, 1);
+        renderCart();
+      }
+      function addToCart(item) {
+        cart.push(item);
+        renderCart();
+        openCartDrawer();
+      }
+
+      // bind click on all product images
+      function bindCardEvents() {
+        document.querySelectorAll("#productGrid article").forEach((card) => {
+          if (card.dataset.bound) return;
+          card.dataset.bound = "1";
+          if (!card.dataset.category) {
+            card.dataset.category = detectCategoryByTitle(card.querySelector("h3")?.textContent || "");
+          }
+
+          // photo → slide panel
+          const img   = card.querySelector("img");
+          const title = card.querySelector("h3")?.textContent || "";
+          const desc  = card.querySelector("p")?.textContent  || "";
+          const price = Number(card.querySelector(".text-slate-900.text-lg")?.textContent?.replace(" грн","").trim() || 0);
+          if (img) img.style.cursor = "pointer";
+          img?.addEventListener("click", () => openSlide(img.src, title, desc, price));
+
+          // add to cart
+          const cartBtn = [...card.querySelectorAll("button")].find((b) => b.textContent.includes("В кошик"));
+          cartBtn?.addEventListener("click", (e) => {
+            e.stopPropagation();
+            addToCart({ name: title, price, img: img?.src || "" });
+          });
+
+          // delete button (admin only)
+          const delBtn = card.querySelector(".delete-btn");
+          delBtn?.addEventListener("click", (e) => {
+            e.stopPropagation();
+            card.style.transition = "opacity .3s, transform .3s";
+            card.style.opacity = "0";
+            card.style.transform = "scale(.9)";
+            setTimeout(() => card.remove(), 300);
+          });
+        });
+      }
+      bindCardEvents();
+
+      // open cart from header / hero button
+      document.getElementById("cartToggleBtn")?.addEventListener("click", openCartDrawer);
+      document.getElementById("heroCartBtn")?.addEventListener("click", openCartDrawer);
+      document.getElementById("slideCartBtn")?.addEventListener("click", () => {
+        const btn = document.getElementById("slideCartBtn");
+        addToCart({
+          name: btn.dataset.name || "Товар",
+          price: Number(btn.dataset.price || 0),
+          img: btn.dataset.img || ""
+        });
+      });
+
+      // ── ADD PRODUCT MODAL ─────────────────────────────────────────
+      function openModal() {
+        const m = document.getElementById("modal");
+        m.classList.remove("hidden"); m.classList.add("flex");
+        if (window.lucide) lucide.createIcons();
+      }
+      function closeModal() {
+        const m = document.getElementById("modal");
+        m.classList.add("hidden"); m.classList.remove("flex");
+        document.getElementById("productForm").reset();
+        const preview = document.getElementById("f-preview");
+        preview.src = ""; preview.classList.add("hidden");
+        document.getElementById("img-label").textContent = "Оберіть фото або перетягніть сюди";
+      }
+      function previewImage(input) {
+        if (!input.files?.[0]) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const p = document.getElementById("f-preview");
+          p.src = e.target.result; p.classList.remove("hidden");
+          document.getElementById("img-label").textContent = input.files[0].name;
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+
+      function addProduct(e) {
+        e.preventDefault();
+        const name   = document.getElementById("f-name").value.trim();
+        const desc   = document.getElementById("f-desc").value.trim();
+        const price  = document.getElementById("f-price").value;
+        const rating = parseFloat(document.getElementById("f-rating").value) || 4.8;
+        const badge  = document.getElementById("f-badge").value;
+        const category = document.getElementById("f-category").value;
+        const imgEl  = document.getElementById("f-preview");
+        const imgSrc = imgEl.src && !imgEl.classList.contains("hidden") ? imgEl.src : "images/klyaksa-photo-001.jpg";
+
+        const badgeCls  = badge === "new" ? "badge-new" : "badge-sale";
+        const badgeTxt  = badge === "new" ? "NEW" : badge === "hit" ? "ХІТ" : badge;
+        const badgeHtml = badge ? `<span class="${badgeCls} absolute left-2 top-2 rounded-full px-2 py-1 text-xs font-bold text-white">${badgeTxt}</span>` : "";
+
+        const article = document.createElement("article");
+        article.className = "card-appear group rounded-3xl border border-violet-100 p-3 shadow-lg transition hover:-translate-y-1";
+        article.dataset.category = category;
+        article.innerHTML = `
+          <div class="relative mb-3">
+            <img src="${imgSrc}" alt="${name}" class="aspect-square w-full cursor-pointer rounded-2xl object-cover" />
+            ${badgeHtml}
+            <button class="delete-btn absolute right-2 top-2 items-center justify-center rounded-full bg-red-500 p-1.5 text-white shadow-lg transition hover:scale-110 hover:bg-red-600">
+              <i data-lucide="trash-2" class="size-3.5"></i>
+            </button>
+          </div>
+          <h3 class="mb-1 text-sm font-bold text-slate-900 sm:text-base">${name}</h3>
+          <p class="mb-2 text-xs text-slate-500">${desc}</p>
+          <div class="mb-3 flex items-center justify-between">
+            <span class="text-lg font-extrabold text-slate-900">${price} грн</span>
+            <span class="text-xs font-semibold text-amber-500">★ ${rating.toFixed(1)}</span>
+          </div>
+          <button class="btn-cart inline-flex w-full items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-xs font-bold text-white transition sm:text-sm">
+            <i data-lucide="shopping-cart" class="size-4"></i> В кошик
+          </button>`;
+
+        document.getElementById("productGrid").appendChild(article);
+        requestAnimationFrame(() => requestAnimationFrame(() => article.classList.add("visible")));
+        if (window.lucide) lucide.createIcons();
+        bindCardEvents();
+        filterByCategory(currentCategory);
+        closeModal();
+        article.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+
+      // ── add delete buttons to existing cards ──────────────────────
+      document.querySelectorAll("#productGrid article").forEach((card) => {
+        const imgWrap = card.querySelector(".relative.mb-3");
+        if (!imgWrap) return;
+        const btn = document.createElement("button");
+        btn.className = "delete-btn absolute right-2 top-2 items-center justify-center rounded-full bg-red-500 p-1.5 text-white shadow-lg transition hover:scale-110 hover:bg-red-600";
+        btn.innerHTML = `<i data-lucide="trash-2" class="size-3.5"></i>`;
+        imgWrap.appendChild(btn);
+      });
+      if (window.lucide) lucide.createIcons();
+      bindCardEvents();
+      filterByCategory("all");
+
+      // ── keyboard shortcuts ────────────────────────────────────────
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") { closeModal(); closeSlide(); closePasswordPrompt(); closeCartDrawer(); }
+      });
+    </script>
+  </body>
+</html>

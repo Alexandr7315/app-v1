@@ -1,0 +1,17 @@
+<svg width="800" height="800" viewBox="0 0 800 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="800" rx="96" fill="url(#paint0_linear_3_1)"/>
+  <rect x="170" y="160" width="460" height="460" rx="54" fill="#F8FAFC" fill-opacity="0.95"/>
+  <rect x="235" y="250" width="60" height="240" rx="18" fill="#F43F5E"/>
+  <rect x="325" y="250" width="60" height="240" rx="18" fill="#F59E0B"/>
+  <rect x="415" y="250" width="60" height="240" rx="18" fill="#10B981"/>
+  <rect x="505" y="250" width="60" height="240" rx="18" fill="#3B82F6"/>
+  <rect x="190" y="560" width="420" height="90" rx="32" fill="#F8FAFC"/>
+  <text x="400" y="617" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="40" font-weight="700" fill="#7C3AED">PROCOLOR</text>
+  <defs>
+    <linearGradient id="paint0_linear_3_1" x1="120" y1="90" x2="700" y2="740" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9333EA"/>
+      <stop offset="0.5" stop-color="#EC4899"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+  </defs>
+</svg>

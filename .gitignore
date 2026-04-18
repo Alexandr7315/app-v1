@@ -1,0 +1,27 @@
+# Секрети (ніколи не коммітити)
+.env
+backend/.env
+
+# Залежності
+node_modules/
+
+# Збірки
+frontend/dist
+dist
+
+# Локальна БД SQLite (дані на сервері свої)
+backend/data/
+*.db
+
+# Завантажені адміном фото (опційно; статичні товари в /images лишаються)
+images/uploads/
+
+# Логи та ОС
+*.log
+.DS_Store
+Thumbs.db
+
+# Інструменти
+.idea
+.vscode/*
+!.vscode/extensions.json
