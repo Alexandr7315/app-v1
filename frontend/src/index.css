@@ -66,7 +66,7 @@ body {
   inset: 0;
   background:
     linear-gradient(180deg, rgba(88, 28, 135, 0.28), rgba(157, 23, 77, 0.18)),
-    url("/pereiaslav-bg.jpg") center 34% / cover no-repeat;
+    url(./assets/pereiaslav-bg.jpg) center 34% / cover no-repeat;
   opacity: 0.38;
   filter: blur(1.5px) saturate(1.05);
   transform: scale(1.03);

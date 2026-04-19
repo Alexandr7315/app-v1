@@ -11,7 +11,18 @@ import {
   User,
 } from "lucide-react";
 
-const api = axios.create({ baseURL: "/api" });
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL?.trim() || "/api",
+});
+
+/** Шляхи на кшталт /images/... з урахуванням `base` (деплой у підкаталог, напр. GitHub Pages). */
+function assetUrl(path) {
+  if (path == null || path === "") return "";
+  const s = String(path).trim();
+  if (/^(https?:|data:|blob:)/i.test(s)) return s;
+  const noLead = s.startsWith("/") ? s.slice(1) : s;
+  return `${import.meta.env.BASE_URL}${noLead}`;
+}
 
 const categories = [
   { id: "all", label: "Усі товари" },
@@ -607,10 +618,10 @@ function App() {
     <div className="page">
       <header className="hero">
         <div className="topbar container">
-          <audio ref={musicRef} src={SITE_MUSIC_SRC} loop preload="none" />
+          <audio ref={musicRef} src={assetUrl(SITE_MUSIC_SRC)} loop preload="none" />
           <div className="brand-with-music">
             <div className="brand" onClick={handleLogoClick}>
-              <img src="/images/logo.png" alt="КЛЯКСА" />
+              <img src={assetUrl("/images/logo.png")} alt="КЛЯКСА" />
               <strong>КЛЯКСА</strong>
             </div>
             <button
@@ -623,7 +634,7 @@ function App() {
               aria-pressed={musicOn}
               aria-label={musicOn ? "Вимкнути фонову музику" : "Увімкнути фонову музику"}
             >
-              <img src={SITE_MUSIC_ICON} alt="" width={32} height={32} decoding="async" />
+              <img src={assetUrl(SITE_MUSIC_ICON)} alt="" width={32} height={32} decoding="async" />
             </button>
           </div>
           <div className="top-actions">
@@ -721,7 +732,7 @@ function App() {
                   <span className="stock-banner">Немає в наявності</span>
                 )}
                 <img
-                  src={p.image}
+                  src={assetUrl(p.image)}
                   alt={p.name}
                   className="card-image"
                   onClick={() => setImagePanel(p)}
@@ -807,7 +818,7 @@ function App() {
           <div className="overlay" onClick={() => setImagePanel(null)} />
           <aside className="side-panel">
             <button className="close" onClick={() => setImagePanel(null)}><X size={18} /></button>
-            <img src={imagePanel.image} alt={imagePanel.name} className="panel-image" />
+            <img src={assetUrl(imagePanel.image)} alt={imagePanel.name} className="panel-image" />
             <h3>{imagePanel.name}</h3>
             <p>{imagePanel.description}</p>
             <b>{imagePanel.price} грн</b>
@@ -824,7 +835,7 @@ function App() {
             {cart.length === 0 && <p className="empty">Кошик порожній.</p>}
             {cart.map((item) => (
               <div key={item.id} className="cart-item">
-                <img src={item.image} alt={item.name} />
+                <img src={assetUrl(item.image)} alt={item.name} />
                 <div>
                   <strong>{item.name}</strong>
                   <p>{item.qty} x {item.price} грн</p>
@@ -875,7 +886,7 @@ function App() {
             {favoriteProducts.length === 0 && <p className="empty">Поки що немає збережених товарів.</p>}
             {favoriteProducts.map((item) => (
               <div key={item.id} className="cart-item">
-                <img src={item.image} alt={item.name} />
+                <img src={assetUrl(item.image)} alt={item.name} />
                 <div>
                   <strong>{item.name}</strong>
                   <p>{item.price} грн</p>
@@ -1148,7 +1159,7 @@ function App() {
               )}
               {(uploadPreview || form.image) && (
                 <div className="upload-preview">
-                  <img src={uploadPreview || form.image} alt="Прев'ю товару" />
+                  <img src={uploadPreview || assetUrl(form.image)} alt="Прев'ю товару" />
                 </div>
               )}
               <input placeholder="Шлях до фото (/images/...)" value={form.image} onChange={(e) => setForm((v) => ({ ...v, image: e.target.value }))} required />

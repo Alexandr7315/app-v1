@@ -1,0 +1,59 @@
+# Статичний фронт на GitHub Pages (https://<user>.github.io/<repo>/).
+# Після першого push: Settings → Pages → Build and deployment → Source: GitHub Actions.
+# Якщо бекенд окремо: Settings → Secrets and variables → Actions → Variables →
+# VITE_API_BASE_URL = повний URL префікса API (наприклад https://api.example.com/api).
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Підготувати /images для статичного хостингу
+        run: |
+          mkdir -p frontend/public/images
+          cp -r images/. frontend/public/images/
+
+      - name: Збірка (base = ім’я репозиторію)
+        working-directory: frontend
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+        run: |
+          npm ci
+          npx vite build --base=/${{ github.event.repository.name }}/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
