@@ -103,6 +103,44 @@ body {
   font-family: "Montserrat Alternates", Inter, sans-serif;
 }
 
+.brand-with-music {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+
+.music-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.2) inset;
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+.music-toggle:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+.music-toggle:active {
+  transform: scale(0.96);
+}
+.music-toggle img {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  object-fit: cover;
+  pointer-events: none;
+}
+.music-toggle--on {
+  background: rgba(255, 200, 120, 0.35);
+}
+
 /* Збережені · Кошик · Увійти — одна група справа, рівний крок (як gap-6 у Tailwind) */
 .top-actions {
   display: flex;

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import {
   ShoppingCart,
@@ -27,6 +27,9 @@ function isProductInStock(p) {
   if (p == null) return false;
   return p.in_stock === 1 || p.in_stock === true;
 }
+
+const SITE_MUSIC_SRC = "/images/muz/Клякса Маркетплейс.mp3";
+const SITE_MUSIC_ICON = "/images/muz/6351681380.jpg";
 
 const initialForm = {
   name: "",
@@ -83,6 +86,8 @@ function App() {
   const [adminOnlyOutOfStock, setAdminOnlyOutOfStock] = useState(false);
   /** Чернетка кількості на картці (для адміна), ключ — id товару */
   const [adminQtyDraft, setAdminQtyDraft] = useState({});
+  const musicRef = useRef(null);
+  const [musicOn, setMusicOn] = useState(false);
 
   const isAdmin = Boolean(adminToken);
 
@@ -192,6 +197,25 @@ function App() {
     setAdminClicks((prev) => prev + 1);
     setTimeout(() => setAdminClicks(0), 2500);
   }
+
+  function toggleSiteMusic() {
+    const el = musicRef.current;
+    if (!el) return;
+    if (el.paused) {
+      el.play()
+        .then(() => setMusicOn(true))
+        .catch(() => setMusicOn(false));
+    } else {
+      el.pause();
+      setMusicOn(false);
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      musicRef.current?.pause();
+    };
+  }, []);
 
   useEffect(() => {
     if (adminClicks >= 5 && !isAdmin) {
@@ -583,9 +607,24 @@ function App() {
     <div className="page">
       <header className="hero">
         <div className="topbar container">
-          <div className="brand" onClick={handleLogoClick}>
-            <img src="/images/logo.png" alt="КЛЯКСА" />
-            <strong>КЛЯКСА</strong>
+          <audio ref={musicRef} src={SITE_MUSIC_SRC} loop preload="none" />
+          <div className="brand-with-music">
+            <div className="brand" onClick={handleLogoClick}>
+              <img src="/images/logo.png" alt="КЛЯКСА" />
+              <strong>КЛЯКСА</strong>
+            </div>
+            <button
+              type="button"
+              className={`music-toggle${musicOn ? " music-toggle--on" : ""}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleSiteMusic();
+              }}
+              aria-pressed={musicOn}
+              aria-label={musicOn ? "Вимкнути фонову музику" : "Увімкнути фонову музику"}
+            >
+              <img src={SITE_MUSIC_ICON} alt="" width={32} height={32} decoding="async" />
+            </button>
           </div>
           <div className="top-actions">
             <button type="button" className="ghost topbar-action-btn" onClick={() => setFavoritesOpen(true)}>
