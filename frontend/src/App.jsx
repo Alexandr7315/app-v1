@@ -24,6 +24,33 @@ function assetUrl(path) {
   return `${import.meta.env.BASE_URL}${noLead}`;
 }
 
+/**
+ * Фото товарів з API (`/images/...`). Якщо API на іншому хості (VITE_API_BASE_URL),
+ * зображення треба брати звідти — на GitHub Pages немає /images/uploads/ і може не збігатися БД.
+ * Локально / на Pages без змінної — лишається assetUrl (проксі або статика в public).
+ */
+function apiStaticOrigin() {
+  const raw = import.meta.env.VITE_API_BASE_URL?.trim();
+  if (!raw || !/^https?:\/\//i.test(raw)) return "";
+  try {
+    const base = raw.replace(/\/+$/, "");
+    return base.replace(/\/?api\/?$/i, "") || base;
+  } catch {
+    return "";
+  }
+}
+
+function mediaUrl(path) {
+  if (path == null || path === "") return "";
+  const s = String(path).trim();
+  if (/^(https?:|data:|blob:)/i.test(s)) return s;
+  const origin = apiStaticOrigin();
+  if (origin && s.startsWith("/images/")) {
+    return `${origin}${s}`;
+  }
+  return assetUrl(s);
+}
+
 const categories = [
   { id: "all", label: "Усі товари" },
   { id: "board-games", label: "Настільні ігри" },
@@ -732,7 +759,7 @@ function App() {
                   <span className="stock-banner">Немає в наявності</span>
                 )}
                 <img
-                  src={assetUrl(p.image)}
+                  src={mediaUrl(p.image)}
                   alt={p.name}
                   className="card-image"
                   onClick={() => setImagePanel(p)}
@@ -818,7 +845,7 @@ function App() {
           <div className="overlay" onClick={() => setImagePanel(null)} />
           <aside className="side-panel">
             <button className="close" onClick={() => setImagePanel(null)}><X size={18} /></button>
-            <img src={assetUrl(imagePanel.image)} alt={imagePanel.name} className="panel-image" />
+            <img src={mediaUrl(imagePanel.image)} alt={imagePanel.name} className="panel-image" />
             <h3>{imagePanel.name}</h3>
             <p>{imagePanel.description}</p>
             <b>{imagePanel.price} грн</b>
@@ -835,7 +862,7 @@ function App() {
             {cart.length === 0 && <p className="empty">Кошик порожній.</p>}
             {cart.map((item) => (
               <div key={item.id} className="cart-item">
-                <img src={assetUrl(item.image)} alt={item.name} />
+                <img src={mediaUrl(item.image)} alt={item.name} />
                 <div>
                   <strong>{item.name}</strong>
                   <p>{item.qty} x {item.price} грн</p>
@@ -886,7 +913,7 @@ function App() {
             {favoriteProducts.length === 0 && <p className="empty">Поки що немає збережених товарів.</p>}
             {favoriteProducts.map((item) => (
               <div key={item.id} className="cart-item">
-                <img src={assetUrl(item.image)} alt={item.name} />
+                <img src={mediaUrl(item.image)} alt={item.name} />
                 <div>
                   <strong>{item.name}</strong>
                   <p>{item.price} грн</p>
@@ -1159,7 +1186,7 @@ function App() {
               )}
               {(uploadPreview || form.image) && (
                 <div className="upload-preview">
-                  <img src={uploadPreview || assetUrl(form.image)} alt="Прев'ю товару" />
+                  <img src={uploadPreview || mediaUrl(form.image)} alt="Прев'ю товару" />
                 </div>
               )}
               <input placeholder="Шлях до фото (/images/...)" value={form.image} onChange={(e) => setForm((v) => ({ ...v, image: e.target.value }))} required />
